@@ -22,8 +22,11 @@ private:
     }
 
     void deallocMemory() {
-        delete[] m_data;
-        m_data = nullptr;
+        if (m_data)
+        {
+            delete[] m_data;
+            m_data = nullptr;
+        }
     }
 
     class Iterator {
@@ -80,7 +83,25 @@ public:
         allocMemory();
     }
     
-    Vector(const Vector& other) = delete;
+    Vector(const Vector& other) {
+        for (auto elem : other) {
+            push_back(elem);
+        }
+    }
+
+    Vector& operator=(const Vector& other) {
+        if (this == &other) {
+            return *this;
+        }
+        deallocMemory();
+        m_capacity = other.m_capacity;
+        allocMemory();
+        m_size = 0;
+        for (auto elem : other) {
+            push_back(elem);
+        }
+        return *this;
+    }
     
     ~Vector() {
         deallocMemory();
@@ -194,10 +215,13 @@ int main() {
     std::cout << vec;
     vec.push_back(5);
     std::cout << vec;
+
+    std::cout << "testing for-range:\n";
     for (auto item : vec) {
         std::cout << item << " ";
     }
     std::cout << "\n";
+
     // vec.nullify();
     // for (auto item : vec) {
     //     std::cout << item << " ";
@@ -205,6 +229,15 @@ int main() {
     // std::cout << "\n";
 
     std::cout << " ==== DONE PUSHING ==== \n";
+    
+    std::cout << "vector copy\n";
+    Vector<int> vectorCopy{ vec };
+    std::cout << vectorCopy;
+
+    std::cout << "assignment operator\n";
+    Vector<int> assignmentVec(17);
+    assignmentVec = vectorCopy;
+    std::cout << assignmentVec;
 
     vec.pop_back();
     std::cout << vec;
@@ -218,5 +251,7 @@ int main() {
     std::cout << vec;
     vec.pop_back();
     std::cout << vec;
+
+
     return 0;
 }
