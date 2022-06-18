@@ -26,6 +26,28 @@ private:
         m_data = nullptr;
     }
     
+    class Iterator {
+    private:
+        const Vector& m_vector;
+        std::size_t m_curr_idx{};
+    public:
+        Iterator(const Vector& vector) : Iterator::Iterator{ vector, 0 } {}
+        Iterator(const Vector& vector, std::size_t index) : m_vector{ vector }, m_curr_idx{ index } {}
+
+        Iterator& operator++() {
+            ++m_curr_idx;
+            return *this;
+        }
+
+        T operator*() const {
+            return m_vector[m_curr_idx];
+        }
+
+        bool operator!=(const Iterator& other) const {
+            return ((&m_vector != &(other.m_vector)) || (m_curr_idx != other.m_curr_idx));
+        }
+    };
+    
 public:
     Vector() {
         allocMemory();
@@ -42,15 +64,23 @@ public:
         deallocMemory();
     }
 
+    Iterator begin() {
+        return { *this };
+    }
+
+    Iterator end() {
+        return { *this, m_size };
+    }
+
     T& operator[](std::size_t index) {
         assert(index >= 0);
-        assert(index < m_size);
+        assert(index <= m_size);
         return m_data[index];
     }
 
     const T& operator[](std::size_t index) const {
         assert(index >= 0);
-        assert(index < m_size);
+        assert(index <= m_size);
         return m_data[index];
     }
     
