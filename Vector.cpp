@@ -28,22 +28,44 @@ private:
 
     class Iterator {
     private:
-        const Vector& m_vector;
+        Vector& m_vector;
         std::size_t m_curr_idx{};
     public:
-        Iterator(const Vector& vector) : Iterator::Iterator{ vector, 0 } {}
-        Iterator(const Vector& vector, std::size_t index) : m_vector{ vector }, m_curr_idx{ index } {}
+        Iterator(Vector& vector) : Iterator::Iterator{ vector, 0 } {}
+        Iterator(Vector& vector, std::size_t index) : m_vector{ vector }, m_curr_idx{ index } {}
 
         Iterator& operator++() {
             ++m_curr_idx;
             return *this;
         }
 
-        T operator*() const {
+        T& operator*() const {
             return m_vector[m_curr_idx];
         }
 
-        bool operator!=(const Iterator& other) const {
+        bool operator!=(Iterator& other) const {
+            return ((&m_vector != &(other.m_vector)) || (m_curr_idx != other.m_curr_idx));
+        }
+    };
+
+    class ConstIterator {
+    private:
+        const Vector& m_vector;
+        std::size_t m_curr_idx{};
+    public:
+        ConstIterator(const Vector& vector) : ConstIterator::ConstIterator{ vector, 0 } {}
+        ConstIterator(const Vector& vector, std::size_t index) : m_vector{ vector }, m_curr_idx{ index } {}
+
+        ConstIterator& operator++() {
+            ++m_curr_idx;
+            return *this;
+        }
+
+        const T& operator*() const {
+            return m_vector[m_curr_idx];
+        }
+
+        bool operator!=(const ConstIterator& other) const {
             return ((&m_vector != &(other.m_vector)) || (m_curr_idx != other.m_curr_idx));
         }
     };
@@ -69,6 +91,22 @@ public:
     }
 
     Iterator end() {
+        return { *this, m_size };
+    }
+
+    ConstIterator begin() const {
+        return { *this };
+    }
+
+    ConstIterator end() const {
+        return { *this, m_size };
+    }
+
+    ConstIterator cbegin() const {
+        return { *this };
+    }
+
+    ConstIterator cend() const {
         return { *this, m_size };
     }
 
