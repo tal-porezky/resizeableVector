@@ -25,7 +25,7 @@ private:
         delete[] m_data;
         m_data = nullptr;
     }
-    
+
     class Iterator {
     private:
         const Vector& m_vector;
@@ -87,15 +87,15 @@ public:
     template<typename U>
     friend std::ostream& operator<<(std::ostream& out, const Vector<U>& vector);
     
-    constexpr std::size_t size() const { return m_size; }
-    constexpr std::size_t capacity() const { return m_capacity; }
-    constexpr bool empty() const { return m_size == 0; }
+    std::size_t size() const { return m_size; }
+    std::size_t capacity() const { return m_capacity; }
+    bool empty() const { return m_size == 0; }
 
-    constexpr void nullify() {
-        for (int ii{ 0 }; ii < m_size; ++ii) {
-            m_data[ii] = T();
-        }
-    }
+    // void nullify() {
+    //     for (T& item : *this) {
+    //         item = T();
+    //     }
+    // }
 
     void push_back(T item) {
         assert(m_size < m_capacity);
@@ -103,7 +103,7 @@ public:
         if (passedMaxLoadFactor()) {
             m_capacity = m_capacity * RESIZE_FACTOR ;
             T* newArr = new T[m_capacity];
-            for (int ii{ 0 }; ii < m_size - 1; ++ii) {
+            for (std::size_t ii{ 0 }; ii < m_size - 1; ++ii) {
                 newArr[ii] = m_data[ii];
             }
             deallocMemory();
@@ -119,7 +119,7 @@ public:
         if (passedMinLoadFactor()) {
             m_capacity = m_capacity / RESIZE_FACTOR ;
             T* newArr = new T[m_capacity];
-            for (int ii{ 0 }; ii < m_size; ++ii) {
+            for (std::size_t ii{ 0 }; ii < m_size; ++ii) {
                 newArr[ii] = m_data[ii];
             }
             deallocMemory();
@@ -156,6 +156,18 @@ int main() {
     std::cout << vec;
     vec.push_back(5);
     std::cout << vec;
+    for (auto item : vec) {
+        std::cout << item << " ";
+    }
+    std::cout << "\n";
+    // vec.nullify();
+    // for (auto item : vec) {
+    //     std::cout << item << " ";
+    // }
+    // std::cout << "\n";
+
+    std::cout << " ==== DONE PUSHING ==== \n";
+
     vec.pop_back();
     std::cout << vec;
     vec.pop_back();
