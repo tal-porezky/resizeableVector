@@ -14,8 +14,6 @@ private:
 
     double getLoadFactor() const { return m_size / static_cast<double>(m_capacity); }
     bool passedMaxLoadFactor() const { return getLoadFactor() >= MAX_LOAD_FACTOR; }
-    bool passedMinLoadFactor() const { return getLoadFactor() <= MIN_LOAD_FACTOR; }
-    bool shouldResize() const { return passedMaxLoadFactor() || passedMinLoadFactor(); }
 
     void allocMemory() {
         m_data = new T[m_capacity];
@@ -171,20 +169,10 @@ public:
         m_data[m_size - 1] = item;
     }
 
-    void pop_back() {
-        assert(m_size >= 0);
-        if (m_size == 0) { return; }
-        --m_size;
-        if (passedMinLoadFactor()) {
-            m_capacity = m_capacity / RESIZE_FACTOR ;
-            T* newArr = new T[m_capacity];
-            for (std::size_t ii{ 0 }; ii < m_size; ++ii) {
-                newArr[ii] = m_data[ii];
-            }
-            deallocMemory();
-            m_data = newArr;
-        }
-    }
+    T pop_back() {
+        assert(m_size > 0);
+        return m_data[--m_size];
+    }   
     
 };
 
@@ -210,7 +198,7 @@ int main() {
     vec.push_back(2);
     std::cout << vec;
     vec.push_back(3);
-    std::cout << vec;
+    std::cout << "poped: " << vec.pop_back() << "\n";
     vec.push_back(4);
     std::cout << vec;
     vec.push_back(5);
@@ -249,8 +237,8 @@ int main() {
     std::cout << vec;
     vec.pop_back();
     std::cout << vec;
-    vec.pop_back();
-    std::cout << vec;
+    // vec.pop_back();
+    // std::cout << vec;
 
 
     return 0;
