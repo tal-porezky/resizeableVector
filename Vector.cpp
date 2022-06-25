@@ -9,20 +9,26 @@ private:
     T* m_data{};
     
     static constexpr double MAX_LOAD_FACTOR { 0.75 };
-    static constexpr double MIN_LOAD_FACTOR { 0.25 };
-    static constexpr double RESIZE_FACTOR { 2.0 };
+    static constexpr std::size_t RESIZE_FACTOR { 2ul };
 
     double getLoadFactor() const { return m_size / static_cast<double>(m_capacity); }
     bool passedMaxLoadFactor() const { return getLoadFactor() >= MAX_LOAD_FACTOR; }
 
-    void allocMemory() {
-        m_data = new T[m_capacity];
+    void init() {
+        if (m_capacity) {
+            m_data = reinterpret_cast<T*>(malloc( m_capacity * sizeof(T) ));  // This line allocates enough space for m_capaicty objects of type T to be initialize.
+            new (m_data) T[m_size] {};  // This line initializes m_size objects of type T. Note that if m_size < m_capacity, we're not using all the allocated space from the line above.
+        }
     }
 
-    void deallocMemory() {
+    void destruct() {
         if (m_data)
         {
-            delete[] m_data;
+            // Since we constructed with two stages allocating memory and the initilizing the objects) we need two stages to destruct them
+            for (std::size_t ii{ 0 }; ii < m_size; ++ii) { //std::destroy(m_data, m_data + m_size);  // First, we need to destroy all the objects in m_data using their destructor
+                m_data[ii].~T();
+            }
+            free(m_data);  // Second, we need to free the allocated memory since we used malloc
             m_data = nullptr;
         }
     }
@@ -73,15 +79,15 @@ private:
     
 public:
     Vector() {
-        allocMemory();
+        init();
     }
     
-    explicit Vector(std::size_t size) : m_capacity{ static_cast<size_t>(std::max(size * 2, 1ul)) } {
-        assert(size >= 0);
-        allocMemory();
+    explicit Vector(std::size_t size) : m_capacity{ size * RESIZE_FACTOR } {
+        init();
     }
     
-    Vector(const Vector& other) {
+    Vector(const Vector& other) : m_capacity{ other.m_capacity } {
+        init();
         for (auto elem : other) {
             push_back(elem);
         }
@@ -91,9 +97,9 @@ public:
         if (this == &other) {
             return *this;
         }
-        deallocMemory();
+        destruct();
         m_capacity = other.m_capacity;
-        allocMemory();
+        init();
         m_size = 0;
         for (auto elem : other) {
             push_back(elem);
@@ -102,7 +108,7 @@ public:
     }
     
     ~Vector() {
-        deallocMemory();
+        destruct();
     }
 
     Iterator begin() {
@@ -130,13 +136,11 @@ public:
     }
 
     T& operator[](std::size_t index) {
-        assert(index >= 0);
         assert(index <= m_size);
         return m_data[index];
     }
 
     const T& operator[](std::size_t index) const {
-        assert(index >= 0);
         assert(index <= m_size);
         return m_data[index];
     }
@@ -148,25 +152,50 @@ public:
     std::size_t capacity() const { return m_capacity; }
     bool empty() const { return m_size == 0; }
 
-    // void nullify() {
-    //     for (T& item : *this) {
-    //         item = T();
-    //     }
-    // }
+    void reserve(std::size_t requested_capacity) {
+        if (m_capacity >= requested_capacity) {
+            return;
+        }
+        std::cout << "increasing capacity\n";
+        // allocate and init new array
+        T* new_data = reinterpret_cast<T*>(malloc(requested_capacity * sizeof(T)));
+        if (!new_data) {
+            assert(false && "call for malloc() failed - new_data is a nullptr.");
+        }
+        std::size_t ii{ 0 };
+        try {
+            for (; ii < m_size; ++ii) {
+                new (new_data + ii) T(m_data[ii]);
+            }
+        } catch (...) {
+            // if we failed to init/copy/move any of the existiny object to the new array, we should destruct those that were initialized. 
+            for (std::size_t j{ 0 }; j < ii; ++j) {
+                new_data[j].~T();
+            }
+            // or std::destroy(new_arr, new_arr+i);
+            free(new_data);
+            new_data = nullptr;
+            throw;
+        }
+        // delete old objects
+        // std::destroy(m_data, m_data + m_size);
+        for (std::size_t ii{ 0 }; ii < m_size; ++ii) {
+            m_data[ii].~T();
+        }
+        free(m_data);
+        m_data = new_data;
+        m_capacity = requested_capacity;
+    }
 
     void push_back(T item) {
         assert(m_size < m_capacity);
         ++m_size;
         if (passedMaxLoadFactor()) {
-            m_capacity = m_capacity * RESIZE_FACTOR ;
-            T* newArr = new T[m_capacity];
-            for (std::size_t ii{ 0 }; ii < m_size - 1; ++ii) {
-                newArr[ii] = m_data[ii];
-            }
-            deallocMemory();
-            m_data = newArr;
+            std::cout << "Need to increase capacity. Calling reserve in push_back(T item).\n";
+            reserve(m_capacity * RESIZE_FACTOR);
         }
-        m_data[m_size - 1] = item;
+        // place the new item
+        new (m_data + m_size) T(item);
     }
 
     T pop_back() {
